@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Kanji Synesthesia</title>
+<style>
+* {
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 10px;
+}
+h1 {
+  font-size: 72px;
+}
+.element * {
+  display: inline;
+}
+.colorBlock {
+  width: 50px;
+  height: 50px;
+  margin: 25px;
+}
+#file {
+  opacity: 0;
+  position: absolute;
+}
+button {
+  border: none;
+  color: black;
+  width: 30%;
+  font-size: 16px;
+  height: 100px;
+  vertical-align: top;
+  margin-bottom: 4px;
+}
+.a {
+  background-color: #c9eeff;
+}
+.b {
+  background-color: #c9eeff;
+}
+.c {
+  background-color: #c9eeff;
+}
+.d {
+  background-color: #eed6ff;
+}
+.e {
+  background-color: #eed6ff;
+}
+.f {
+  background-color: #eed6ff;
+}
+</style>
+</head>
+<body>
+<h2>Kanji Synesthesia</h2>
+<h3><a href="kanjihowto.html">How to use</a></h3>
+<button class="a" onclick="toggleColorBlock()">Choose Colors</button>
+<button class="b" onclick="saveColorsFile()">Save Colors as JSON File</button>
+<button class="c"><input id="file" type="file">
+<label for="file">Load Colors from JSON File</label></button>
+<br>
+<button class="d" onclick="hideMeaning()">Hide Meanings</button>
+<button class="e" onclick="hideAll()">Hide Romanji and Meanings</button>
+<button class="f" onclick="showAll()">Show Romanji and Meanings</button>
+<div id="list"></div>
+<script src="kanjiyo.js"></script>
+<script>
+//load colors from local storage into kanji.js
+loadColorsLocal();
+//create DOM structure based on kanji.js
+createNodes();
+function createNodes() {
+  var parent = document.getElementById("list");
+  parent.innerHTML = '';
+  for (i in kanji) {
+    var div = document.createElement("div");
+    var divColor = document.createElement("div");
+    var colorBlock = document.createElement("input");
+    divColor.className = i;
+    colorBlock.id = i;
+    colorBlock.type = "color";
+    colorBlock.className = "colorBlock";
+    colorBlock.style.backgroundColor = kanji[i].color;
+    colorBlock.style.display = "none";
+    div.className = "element";
+    div.style.color = kanji[i].color;
+    div.appendChild(createNode("h1", i));
+    div.appendChild(createNode("h2", kanji[i].romanji));
+    div.appendChild(createNode("h3", kanji[i].meaning));
+    div.addEventListener('click', toggleVisible, false);
+    colorBlock.addEventListener('change', chooseColor, false);
+    divColor.appendChild(div);
+    divColor.appendChild(colorBlock);
+    parent.appendChild(divColor);
+  }
+}
+function createNode(tag, text) {
+  var element = document.createElement(tag);
+  var textNode = document.createTextNode(text);
+  element.appendChild(textNode);
+  return element;
+}
+function loadColorsLocal() {
+  if (typeof(Storage) !== "undefined") {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key in kanji) {
+        kanji[key].color = localStorage.getItem(key);
+      }
+    }
+  }
+  else {
+    console.log("web storage not supported");
+  }
+}
+function readerLoad(event){
+  var file = JSON.parse(event.target.result);
+  for (i in file) {
+    if (typeof kanji[i] != "undefined") {
+      kanji[i].color = file[i];
+      localStorage.setItem(i, file[i]);
+    }
+  }
+  createNodes();
+}
+document.getElementById('file').addEventListener('change', loadColorsFile);
+function loadColorsFile(event) {
+  var reader = new FileReader();
+  reader.onload = readerLoad;
+  reader.readAsText(event.target.files[0]);
+}
+function saveColorsFile() {
+  var file = {};
+  for (i in kanji) {
+    file[i] = kanji[i].color;
+  }
+  var data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(file));
+  var a = document.createElement('a');
+  a.setAttribute("href", data);
+  a.setAttribute("download", "colors.json");
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+function toggleVisible() {
+  if (this.children[1].style.display != "none") {
+    this.children[1].style.display = "none";
+    this.children[2].style.display = "none";
+  }
+  else {
+    this.children[1].style.display = "inline";
+    this.children[2].style.display = "inline";
+  }
+}
+function toggleColorBlock() {
+  var elements = document.getElementsByClassName("colorBlock");
+  if (elements[0].style.display == "none") {
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.display = "block";
+    }
+  }
+  else {
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.display = "none";
+    }
+  }
+}
+function chooseColor() {
+  var elements = document.getElementsByClassName(this.id);
+  this.style.backgroundColor = document.getElementById(this.id).value;
+  kanji[this.id].color = this.value;
+  var nodes = elements[0].childNodes;
+  for (var i = 0; i < nodes.length; i++) {
+    nodes[i].style.color = this.value;
+  }
+  if (typeof(Storage) !== "undefined") {
+    localStorage.setItem(this.id, this.value);
+  }
+  else {
+    console.log("web storage not supported");
+  }
+}
+function hideMeaning() {
+  var elements = document.getElementsByClassName("element");
+  for (var i = 0; i < elements.length; i++) {
+    elements[i].children[2].style.color = "white";
+  }
+}
+function hideAll() {
+  var elements = document.getElementsByClassName("element");
+  for (var i = 0; i < elements.length; i++) {
+    elements[i].children[1].style.color = "white";
+    elements[i].children[2].style.color = "white";
+  }
+}
+function showAll() {
+  var elements = document.getElementsByClassName("element");
+  for (var i = 0; i < elements.length; i++) {
+    elements[i].children[1].style.color = elements[i].style.color;
+    elements[i].children[2].style.color = elements[i].style.color;
+  }
+}
+</script>
+</body>
+</html>
